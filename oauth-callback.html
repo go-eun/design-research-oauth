@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>로그인 처리 중...</title>
+</head>
+<body>
+  <p id="message">로그인 처리 중...</p>
+
+  <script>
+    try {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+
+      if (!accessToken) throw new Error('access_token not found');
+
+      window.opener.postMessage({ type: 'oauth_token', access_token: accessToken }, '*');
+      document.getElementById('message').textContent = '로그인 완료! 이 창을 닫아주세요.';
+    } catch (e) {
+      document.getElementById('message').textContent = '오류가 발생했어요. 다시 시도해주세요.';
+    }
+  </script>
+</body>
+</html>
