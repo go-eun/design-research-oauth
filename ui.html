@@ -424,33 +424,59 @@
     }
 
     // Drive API: 폴더 내 JSON 파일 목록 조회 (페이지네이션 포함)
-    async function fetchAllJsonFiles() {
+    async function driveList(params) {
+      let res;
+      try {
+        res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+      } catch (e) {
+        throw new Error('파일 목록을 가져오지 못했어요: ' + e.message);
+      }
+      if (!res.ok) throw new Error(`Drive API 오류 (${res.status})`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      return data;
+    }
+
+    async function fetchAllJsonFiles(folderId = FOLDER_ID) {
       const files = [];
+
+      // 현재 폴더의 JSON 파일 수집
       let pageToken = null;
       do {
         const params = new URLSearchParams({
-          q: `'${FOLDER_ID}' in parents and mimeType='application/json' and trashed=false`,
+          q: `'${folderId}' in parents and mimeType='application/json' and trashed=false`,
           fields: 'nextPageToken,files(id,name)',
           pageSize: '1000',
+          supportsAllDrives: 'true',
+          includeItemsFromAllDrives: 'true',
         });
         if (pageToken) params.set('pageToken', pageToken);
-
-        let res;
-        try {
-          res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-        } catch (e) {
-          throw new Error('파일 목록을 가져오지 못했어요: ' + e.message);
-        }
-
-        if (!res.ok) throw new Error(`Drive API 오류 (${res.status})`);
-
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
+        const data = await driveList(params);
         if (data.files) files.push(...data.files);
         pageToken = data.nextPageToken || null;
       } while (pageToken);
+
+      // 하위 폴더 재귀 탐색
+      let folderPageToken = null;
+      do {
+        const params = new URLSearchParams({
+          q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          fields: 'nextPageToken,files(id,name)',
+          pageSize: '1000',
+          supportsAllDrives: 'true',
+          includeItemsFromAllDrives: 'true',
+        });
+        if (folderPageToken) params.set('pageToken', folderPageToken);
+        const data = await driveList(params);
+        for (const subfolder of (data.files || [])) {
+          const subFiles = await fetchAllJsonFiles(subfolder.id);
+          files.push(...subFiles);
+        }
+        folderPageToken = data.nextPageToken || null;
+      } while (folderPageToken);
+
       return files;
     }
 
