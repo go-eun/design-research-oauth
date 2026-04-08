@@ -546,11 +546,8 @@
           } catch (e) {
             pngId = null;
           }
-          const thumbnail = pngId
-            ? `https://drive.google.com/thumbnail?id=${pngId}&sz=w200`
-            : null;
 
-          matched.push({ id: file.id, appName: meta.app, thumbnail, pngId, meta });
+          matched.push({ id: file.id, appName: meta.app, pngId, meta });
         }
 
         const grid = document.getElementById('thumbnail-grid');
@@ -566,11 +563,30 @@
             div.className = 'thumbnail-item';
             div.dataset.id = item.id;
             div.dataset.pngId = item.pngId || '';
-            div.innerHTML = item.thumbnail
-              ? `<img src="${item.thumbnail}" alt="${item.appName}" />`
-              : `<div style="width:100%;height:100%;background:#e0e0e0;"></div>`;
-            div.innerHTML += `<div class="check">✓</div>`;
+            div.innerHTML = `<div class="check">✓</div>`;
             grid.appendChild(div);
+
+            if (item.pngId) {
+              fetch(`https://www.googleapis.com/drive/v3/files/${item.pngId}?alt=media`, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              })
+                .then(res => res.blob())
+                .then(blob => {
+                  const img = document.createElement('img');
+                  img.src = URL.createObjectURL(blob);
+                  img.alt = item.appName;
+                  div.insertBefore(img, div.firstChild);
+                })
+                .catch(() => {
+                  const placeholder = document.createElement('div');
+                  placeholder.style.cssText = 'width:100%;height:100%;background:#e0e0e0;';
+                  div.insertBefore(placeholder, div.firstChild);
+                });
+            } else {
+              const placeholder = document.createElement('div');
+              placeholder.style.cssText = 'width:100%;height:100%;background:#e0e0e0;';
+              div.insertBefore(placeholder, div.firstChild);
+            }
           });
         }
 
