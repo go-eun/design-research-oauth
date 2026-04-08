@@ -416,6 +416,13 @@
       document.getElementById('btn-search').disabled = !accessToken;
     });
 
+    function showSearchError(message) {
+      const grid = document.getElementById('thumbnail-grid');
+      grid.innerHTML = `<div class="empty-message" style="grid-column:1/-1;color:#e53935;">오류: ${message}</div>`;
+      document.getElementById('result-count').textContent = '0';
+      showScreen('screen-result');
+    }
+
     // Drive API: 폴더 내 JSON 파일 목록 조회 (페이지네이션 포함)
     async function fetchAllJsonFiles() {
       const files = [];
@@ -428,10 +435,19 @@
         });
         if (pageToken) params.set('pageToken', pageToken);
 
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        let res;
+        try {
+          res = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+        } catch (e) {
+          throw new Error('파일 목록을 가져오지 못했어요: ' + e.message);
+        }
+
+        if (!res.ok) throw new Error(`Drive API 오류 (${res.status})`);
+
         const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
         if (data.files) files.push(...data.files);
         pageToken = data.nextPageToken || null;
       } while (pageToken);
@@ -473,7 +489,14 @@
       btnSearch.textContent = '검색 중...';
 
       try {
-        const jsonFiles = await fetchAllJsonFiles();
+        let jsonFiles;
+        try {
+          jsonFiles = await fetchAllJsonFiles();
+        } catch (e) {
+          showSearchError(e.message);
+          return;
+        }
+
         const matched = [];
 
         for (const file of jsonFiles) {
@@ -491,7 +514,12 @@
           if (collectMonth && meta.collected_month !== collectMonth) continue;
 
           const pngName = file.name.replace(/\.json$/i, '.png');
-          const pngId = await findPngFileId(pngName);
+          let pngId;
+          try {
+            pngId = await findPngFileId(pngName);
+          } catch (e) {
+            pngId = null;
+          }
           const thumbnail = pngId
             ? `https://drive.google.com/thumbnail?id=${pngId}&sz=w200`
             : null;
@@ -522,7 +550,7 @@
 
         showScreen('screen-result');
       } catch (e) {
-        alert('검색 중 오류가 발생했어요: ' + e.message);
+        showSearchError(e.message);
       } finally {
         btnSearch.disabled = false;
         btnSearch.textContent = '검색';
