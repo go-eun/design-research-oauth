@@ -9,9 +9,9 @@
 
   <script>
     try {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
+      const hash = window.location.hash;
+      const match = hash.match(/access_token=([^&]+)/);
+      const accessToken = match ? match[1] : null;
 
       if (!accessToken) throw new Error('access_token not found');
 
