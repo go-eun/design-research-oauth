@@ -15,7 +15,7 @@
 
       if (!accessToken) throw new Error('access_token not found');
 
-      window.opener.postMessage({ type: 'oauth_token', access_token: accessToken }, '*');
+      window.opener.postMessage({ type: 'oauth_token', access_token: accessToken }, 'https://www.figma.com');
       document.getElementById('message').textContent = '로그인 완료! 이 창을 닫아주세요.';
     } catch (e) {
       document.getElementById('message').textContent = '오류가 발생했어요. 다시 시도해주세요.';
