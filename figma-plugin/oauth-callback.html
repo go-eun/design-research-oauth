@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>로그인 처리 중...</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, sans-serif;
+      font-size: 14px;
+      padding: 32px 24px;
+      color: #333;
+      background: #fff;
+    }
+    .icon { font-size: 40px; margin-bottom: 16px; }
+    h2 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #111; }
+    p { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 16px; }
+    .step {
+      display: flex; align-items: center; gap: 10px;
+      background: #f4f3ff; border-radius: 10px;
+      padding: 12px 16px; margin-bottom: 12px;
+      font-size: 13px; font-weight: 500; color: #3d2fcc;
+    }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #7264ff; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .btn {
+      width: 100%; height: 40px; border-radius: 20px;
+      background: #7264ff; color: #fff; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn:hover { background: #5a4fcc; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+    #status { font-size: 12px; color: #888; text-align: center; margin-top: 12px; min-height: 18px; }
+    #status.ok { color: #22aa66; font-weight: 600; }
+    #status.err { color: #e53e3e; }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid #ddd; border-top-color: #7264ff;
+      border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="icon" id="icon">⏳</div>
+  <h2 id="title">로그인 처리 중...</h2>
+  <p id="desc">잠시만 기다려 주세요.</p>
+  <div id="steps" style="display:none;">
+    <div class="step"><div class="step-num">1</div>Figma로 돌아가세요</div>
+    <div class="step"><div class="step-num">2</div>플러그인이 자동으로 로그인을 완료해요</div>
+  </div>
+  <button class="btn" id="btn-manual" style="display:none;">수동으로 붙여넣기</button>
+  <div id="status"></div>
+
+  <script>
+    // ── 설정 ──────────────────────────────────────────
+    const CLIENT_ID = '806440627018-1ft895q9ioltpifivbc50v60s7esosl3.apps.googleusercontent.com';
+    const REDIRECT_URI = 'https://go-eun.github.io/design-research-oauth/oauth-callback.html';
+    const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+
+    // ── DOM ───────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const icon = $('icon'), title = $('title'), desc = $('desc');
+    const steps = $('steps'), btnManual = $('btn-manual'), status = $('status');
+
+    // ── 상태 표시 헬퍼 ────────────────────────────────
+    function setLoading(msg) {
+      status.className = '';
+      status.innerHTML = `<span class="spinner"></span>${msg}`;
+    }
+    function setOk(msg) {
+      status.className = 'ok';
+      status.textContent = '✓ ' + msg;
+    }
+    function setErr(msg) {
+      status.className = 'err';
+      status.textContent = '⚠️ ' + msg;
+    }
+
+    // ── URL에서 code + state 추출 ─────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const error = params.get('error');
+
+    if (error || !code) {
+      icon.textContent = '❌';
+      title.textContent = '로그인 실패';
+      desc.textContent = error === 'access_denied'
+        ? '로그인을 취소했어요. 다시 시도해주세요.'
+        : '로그인 중 오류가 발생했어요. 다시 시도해주세요.';
+      setErr(error || 'code not found');
+    } else {
+      // ── PKCE: code_verifier 복원 ─────────────────────
+      const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
+
+      if (!codeVerifier) {
+        icon.textContent = '❌';
+        title.textContent = '세션 오류';
+        desc.textContent = '보안 세션이 만료됐어요. 플러그인에서 다시 로그인해주세요.';
+        setErr('code_verifier not found in sessionStorage');
+      } else {
+        // ── Google과 토큰 교환 ───────────────────────────
+        setLoading('토큰 교환 중...');
+
+        fetch(TOKEN_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code,
+            redirect_uri: REDIRECT_URI,
+            client_id: CLIENT_ID,
+            code_verifier: codeVerifier,
+          }),
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) throw new Error(data.error_description || data.error);
+
+          const accessToken = data.access_token;
+          const refreshToken = data.refresh_token || null;
+
+          // ── 결과를 JSON으로 묶어서 클립보드 복사 ──────
+          const payload = JSON.stringify({ accessToken, refreshToken });
+
+          return navigator.clipboard.writeText(payload).then(() => {
+            // ── 성공 화면 ─────────────────────────────────
+            icon.textContent = '✅';
+            title.textContent = '로그인 완료!';
+            desc.textContent = '토큰이 클립보드에 복사됐어요.';
+            steps.style.display = 'block';
+            setOk('클립보드에 복사됐어요');
+
+            // ── 수동 붙여넣기 버튼 (fallback) ─────────────
+            btnManual.style.display = 'block';
+            btnManual.textContent = '수동 붙여넣기용 복사';
+            btnManual.onclick = () => {
+              navigator.clipboard.writeText(payload).then(() => {
+                setOk('다시 복사됐어요!');
+              });
+            };
+
+            // ── sessionStorage 정리 ───────────────────────
+            sessionStorage.removeItem('pkce_code_verifier');
+          });
+        })
+        .catch(err => {
+          icon.textContent = '❌';
+          title.textContent = '오류 발생';
+          desc.textContent = '토큰 교환에 실패했어요. 플러그인에서 다시 로그인해주세요.';
+          setErr(err.message);
+          console.error('[oauth-callback] error:', err);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

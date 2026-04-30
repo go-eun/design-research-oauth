@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+/* ── Reset ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { font-family: inherit; border: none; background: none; cursor: pointer; }
+
+/* ── Body ──────────────────────────────────── */
+body {
+  font-family: 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #e8e8e8;
+  display: flex;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+/* ── Plugin Shell (360×500 고정) ─────────────── */
+#plugin {
+  width: 360px;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  background: #f4f4f4;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.12);
+}
+
+/* ── Header ─────────────────────────────────── */
+#header {
+  flex-shrink: 0;
+  height: 40px;
+  background: #1e1e1e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+#header-left  { display: flex; align-items: center; gap: 6px; }
+#header-icon  { width: 14px; height: 14px; background: #444; border-radius: 3px; }
+#header-title { font-size: 12px; font-weight: 500; color: #ccc; }
+#header-close { font-size: 14px; color: #555; }
+
+/* ── Segment Tab ─────────────────────────────── */
+#tab-wrap {
+  flex-shrink: 0;
+  background: #fff;
+  padding: 10px;
+  border-bottom: 1px solid #ebebeb;
+}
+#seg {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.seg-btn {
+  flex: 1;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.seg-btn[aria-selected="true"] {
+  background: #7264FF;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.seg-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Search ──────────────────────────────────── */
+#search-wrap {
+  flex-shrink: 0;
+  background: #fff;
+  padding: 10px;
+  border-bottom: 1px solid #ebebeb;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+#search-field { flex: 1; position: relative; }
+#search-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 36px 0 14px;
+  border: none;
+  border-radius: 17px;
+  background: #f0f0f0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+  outline: none;
+}
+#search-input::placeholder { color: #aaa; }
+#search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: #bbb;
+  border-radius: 50%;
+  font-size: 9px;
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#search-btn {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 17px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #7264FF;
+  color: #fff;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+#search-btn:disabled { background: #e8e8e8; color: #bbb; cursor: not-allowed; }
+
+/* ── Filter Row ──────────────────────────────── */
+#filter-row {
+  flex-shrink: 0;
+  background: #fff;
+  padding: 10px;
+  border-bottom: 1px solid #ebebeb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#all-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1.5px solid #ddd;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #555;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+#all-chip[aria-pressed="true"] {
+  background: #F4F3FF;
+  border-color: #7264FF;
+  color: #3D2FCC;
+}
+#all-count {
+  font-size: 10px;
+  font-weight: 500;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 1px 5px;
+  color: #888;
+  transition: background 0.12s, color 0.12s;
+}
+#all-chip[aria-pressed="true"] #all-count { background: #7264FF; color: #fff; }
+#drive-count {
+  font-size: 10px;
+  font-weight: 500;
+  color: #aaa;
+  padding: 4px;
+}
+#drive-count span { color: #7264FF; font-weight: 500; }
+
+/* ── Folder List ─────────────────────────────── */
+#folder-list { flex: 1; overflow-y: auto; min-height: 0; }
+#folder-list::-webkit-scrollbar { width: 3px; }
+#folder-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+/* ── Folder Card ─────────────────────────────── */
+.folder { background: #fff; margin: 10px 10px 0; border-radius: 16px; overflow: hidden; }
+.folder:last-child { margin-bottom: 10px; }
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.folder-header:active { background: #fafafa; }
+.folder-header-left { display: flex; align-items: center; gap: 7px; }
+
+.folder-arrow {
+  font-size: 9px;
+  color: #bbb;
+  display: inline-block;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.folder-arrow.is-open { transform: rotate(90deg); }
+.folder-emoji { font-size: 15px; }
+.folder-name  { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: #1a1a1a; }
+.folder-count { font-size: 12px; font-weight: 500; color: #bbb; margin-left: -3px; }
+.folder-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #7264FF;
+  background: #F4F3FF;
+  border-radius: 100px;
+  padding: 2px 7px;
+}
+.folder-chips { padding: 4px 10px 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── Chip ────────────────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px 0 3px;
+  border: 1.5px solid #e4e4e4;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 500;
+  color: #555;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.chip.is-text-only { padding: 0 10px; }
+.chip[aria-pressed="true"] { background: #F4F3FF; border-color: #7264FF; color: #3D2FCC; }
+.chip-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Skeleton ────────────────────────────────── */
+.skeleton-card {
+  background: #fff;
+  margin: 10px 10px 0;
+  border-radius: 16px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skeleton-card:last-child { margin-bottom: 10px; }
+.skeleton-row   { display: flex; align-items: center; gap: 8px; }
+.skeleton-chips { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
+.sk {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+  border-radius: 8px;
+}
+.sk-circle { border-radius: 50% !important; flex-shrink: 0; }
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ── Empty State ─────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  min-height: 100%;
+}
+.empty-emoji {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 16px;
+  transition: opacity 0.3s ease;
+}
+.empty-emoji.is-shaking { animation: shake 0.6s ease-in-out; }
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg)   scale(1);    }
+  20%       { transform: rotate(-18deg) scale(1.1);  }
+  40%       { transform: rotate(18deg)  scale(1.1);  }
+  60%       { transform: rotate(-12deg) scale(1.05); }
+  80%       { transform: rotate(12deg)  scale(1.05); }
+}
+.empty-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.empty-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: #aaa;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.empty-action {
+  height: 38px;
+  padding: 0 24px;
+  background: #7264FF;
+  color: #fff;
+  border-radius: 19px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── Selection Bar ───────────────────────────── */
+#sel-bar {
+  flex-shrink: 0;
+  height: 48px;
+  background: #fff;
+  border-top: 1px solid #ebebeb;
+  padding: 10px 0 10px 10px;
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+#sel-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  align-items: center;
+  width: 100%;
+  padding-right: 10px;
+  scrollbar-width: none;
+}
+#sel-scroll::-webkit-scrollbar { display: none; }
+
+.sel-reset {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 500;
+  border: 1.5px solid #ddd;
+  background: #f5f5f5;
+  color: #888;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sel-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 8px 0 3px;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 500;
+  background: #F4F3FF;
+  color: #3D2FCC;
+  border: 1.5px solid #7264FF;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sel-tag.is-text-only { padding: 0 10px; }
+
+/* ── CTA ─────────────────────────────────────── */
+#cta-wrap {
+  flex-shrink: 0;
+  background: #fff;
+  border-top: 1px solid #ebebeb;
+  padding: 10px;
+}
+#cta-btn {
+  width: 100%;
+  height: 40px;
+  background: #7264FF;
+  color: #fff;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: background 0.15s;
+}
+#cta-btn:disabled { background: #e8e8e8; color: #bbb; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="plugin" role="dialog" aria-label="디자인 리서치">
+
+  <!-- Header -->
+  <div id="header">
+    <div id="header-left">
+      <div id="header-icon" aria-hidden="true"></div>
+      <span id="header-title">디자인 리서치</span>
+    </div>
+    <button id="header-close" aria-label="닫기">✕</button>
+  </div>
+
+  <!-- Segment Tab -->
+  <div id="tab-wrap">
+    <div id="seg" role="tablist">
+      <button class="seg-btn" role="tab" aria-selected="true"  data-tab="0">서비스</button>
+      <button class="seg-btn" role="tab" aria-selected="false" data-tab="1" disabled>유형</button>
+      <button class="seg-btn" role="tab" aria-selected="false" data-tab="2" disabled>수집일</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div id="search-wrap">
+    <div id="search-field">
+      <input type="text" id="search-input"
+             placeholder="서비스명을 정확히 입력하세요"
+             autocomplete="off"
+             aria-label="서비스 검색">
+      <button id="search-clear" aria-label="검색어 지우기">✕</button>
+    </div>
+    <button id="search-btn" disabled>검색</button>
+  </div>
+
+  <!-- Filter Row -->
+  <div id="filter-row">
+    <button id="all-chip" aria-pressed="false">
+      전체 <span id="all-count"></span>
+    </button>
+    <span id="drive-count"></span>
+  </div>
+
+  <!-- Folder List -->
+  <div id="folder-list" role="list"></div>
+
+  <!-- Selection Bar -->
+  <div id="sel-bar" role="region" aria-label="선택된 서비스">
+    <div id="sel-scroll"></div>
+  </div>
+
+  <!-- CTA -->
+  <div id="cta-wrap">
+    <button id="cta-btn" disabled>서비스를 선택해 주세요</button>
+  </div>
+
+</div>
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════
+   데이터
+═══════════════════════════════════════════════ */
+
+const FOLDERS = [
+  {
+    id: 'finance', emoji: '💳', name: 'finance',
+    services: [
+      { label: '토스',      bg: '#0064FF', fg: '#fff', abbr: 'T',  count: 21 },
+      { label: '카카오뱅크', bg: '#FFE000', fg: '#333', abbr: 'K',  count: 14 },
+      { label: '네이버페이', bg: '#03C75A', fg: '#fff', abbr: 'N',  count: 8  },
+      { label: '뱅크샐러드', bg: '#845EF7', fg: '#fff', abbr: 'B',  count: 6  },
+    ],
+  },
+  {
+    id: 'health', emoji: '🏋️', name: 'health-fitness',
+    services: [
+      { label: '강남언니', bg: '#FF4E8B', fg: '#fff', abbr: '강', count: 21 },
+      { label: '바비톡',   bg: '#FF8C00', fg: '#fff', abbr: '바', count: 11 },
+      { label: '눔',       bg: '#F04E23', fg: '#fff', abbr: '눔', count: 5  },
+    ],
+  },
+  {
+    id: 'commerce', emoji: '🛍️', name: 'commerce',
+    services: [
+      { label: '쿠팡',    bg: '#FF4500', fg: '#fff', abbr: 'C',  count: 7  },
+      { label: '배민',    bg: '#2AC1BC', fg: '#fff', abbr: 'B',  count: 13 },
+      { label: '올리브영', bg: '#008000', fg: '#fff', abbr: 'O',  count: 5  },
+      { label: '무신사',  bg: '#222222', fg: '#fff', abbr: 'M',  count: 11 },
+      { label: '당근마켓', bg: '#FF6F0F', fg: '#fff', abbr: '당', count: 9  },
+    ],
+  },
+  {
+    id: 'lifestyle', emoji: '🌿', name: 'lifestyle',
+    services: [
+      { label: '야놀자',  bg: '#FF0081', fg: '#fff', abbr: '야', count: 6 },
+      { label: '여기어때', bg: '#E3007C', fg: '#fff', abbr: '여', count: 4 },
+      { label: '오늘의집', bg: '#54C1C4', fg: '#fff', abbr: '오', count: 7 },
+    ],
+  },
+  {
+    id: 'social', emoji: '💬', name: 'social',
+    services: [
+      { label: '카카오톡', bg: '#FFE000', fg: '#333', abbr: 'K', count: 9 },
+      { label: '라인',    bg: '#00B900', fg: '#fff', abbr: 'L', count: 5 },
+    ],
+  },
+];
+
+/* ═══════════════════════════════════════════════
+   파생 상수
+═══════════════════════════════════════════════ */
+
+const ALL_SERVICES   = FOLDERS.flatMap(f => f.services);
+const SERVICE_MAP    = new Map(ALL_SERVICES.map(s => [s.label, s]));
+const TOTAL_SCREENS  = ALL_SERVICES.reduce((sum, s) => sum + s.count, 0);
+const TOTAL_SERVICES = ALL_SERVICES.length;
+
+const toFolderKey     = id  => `folder:${id}`;
+const isFolderKey     = key => key.startsWith('folder:');
+const folderIdFromKey = key => key.slice(7);
+
+/* ═══════════════════════════════════════════════
+   상태
+═══════════════════════════════════════════════ */
+
+const state = {
+  selected:    [],           /* string[]: label | 'folder:id' | '전체' */
+  openFolders: new Set(['finance']),
+  searchResult: null,        /* null=미검색 | []=결과없음 | Folder[] */
+  isLoading:   false,
+};
+
+/* ═══════════════════════════════════════════════
+   DOM 참조
+═══════════════════════════════════════════════ */
+
+const dom = {
+  allChip:     document.getElementById('all-chip'),
+  allCount:    document.getElementById('all-count'),
+  ctaBtn:      document.getElementById('cta-btn'),
+  driveCount:  document.getElementById('drive-count'),
+  filterRow:   document.getElementById('filter-row'),
+  folderList:  document.getElementById('folder-list'),
+  searchBtn:   document.getElementById('search-btn'),
+  searchClear: document.getElementById('search-clear'),
+  searchInput: document.getElementById('search-input'),
+  selBar:      document.getElementById('sel-bar'),
+  selScroll:   document.getElementById('sel-scroll'),
+};
+
+/* ═══════════════════════════════════════════════
+   유틸
+═══════════════════════════════════════════════ */
+
+/** 서비스 로고 HTML */
+const logoHTML = ({ bg, fg, abbr }) =>
+  `<span class="chip-logo" style="background:${bg};color:${fg};">${abbr}</span>`;
+
+/**
+ * selected 배열 → 실제 서비스 label Set
+ * '전체'       → 전체 서비스
+ * 'folder:id' → 해당 폴더의 서비스 전체
+ * 그 외        → 개별 label
+ */
+function resolveSelectedLabels() {
+  if (state.selected.includes('전체')) {
+    return new Set(ALL_SERVICES.map(s => s.label));
+  }
+  const labels = new Set();
+  for (const val of state.selected) {
+    if (isFolderKey(val)) {
+      FOLDERS.find(f => f.id === folderIdFromKey(val))
+             ?.services.forEach(s => labels.add(s.label));
+    } else {
+      labels.add(val);
+    }
+  }
+  return labels;
+}
+
+/** 선택된 서비스 기준 총 이미지 수 */
+function countSelectedImages() {
+  const labels = resolveSelectedLabels();
+  if (!labels.size) return 0;
+  return ALL_SERVICES
+    .filter(s => labels.has(s.label))
+    .reduce((sum, s) => sum + s.count, 0);
+}
+
+/* ═══════════════════════════════════════════════
+   이모지 사이클 (빈 화면 전용)
+═══════════════════════════════════════════════ */
+
+const EMPTY_EMOJIS = ['🔍', '🤔', '😢'];
+let _emojiTimer = null;
+let _emojiIdx   = 0;
+
+function startEmojiCycle() {
+  stopEmojiCycle();
+  _emojiIdx = 0;
+  _emojiTimer = setInterval(() => {
+    const el = document.getElementById('empty-emoji');
+    if (!el) { stopEmojiCycle(); return; }
+    el.style.opacity = '0';
+    setTimeout(() => {
+      const el2 = document.getElementById('empty-emoji');
+      if (!el2) return;
+      _emojiIdx         = (_emojiIdx + 1) % EMPTY_EMOJIS.length;
+      el2.textContent   = EMPTY_EMOJIS[_emojiIdx];
+      el2.style.opacity = '1';
+      el2.classList.remove('is-shaking');
+      void el2.offsetWidth; /* reflow → CSS 애니메이션 재트리거 */
+      el2.classList.add('is-shaking');
+    }, 300);
+  }, 2000);
+}
+
+function stopEmojiCycle() {
+  clearInterval(_emojiTimer);
+  _emojiTimer = null;
+}
+
+/* ═══════════════════════════════════════════════
+   선택 변경 — 단일 진입점 (applySelection)
+   모든 선택 변경은 반드시 이 함수를 통해야 한다.
+═══════════════════════════════════════════════ */
+
+function applySelection(next) {
+  state.selected = next;
+  _syncAllChip();
+  _syncDriveCount();
+  _syncCTA();
+  _renderSelBar();
+  _renderFolderList();
+}
+
+/** 값 하나를 토글하고 applySelection 위임 */
+function toggleSelection(val) {
+  let next = [...state.selected];
+
+  if (isFolderKey(val)) {
+    const folder    = FOLDERS.find(f => f.id === folderIdFromKey(val));
+    const svcLabels = folder.services.map(s => s.label);
+    if (next.includes(val)) {
+      next = next.filter(x => x !== val);
+    } else {
+      /* 소속 개별 선택 + 글로벌 전체 제거 후 폴더 키 삽입 */
+      next = next.filter(x => !svcLabels.includes(x) && x !== '전체');
+      next.unshift(val);
+    }
+  } else {
+    const folder    = FOLDERS.find(f => f.services.some(s => s.label === val));
+    const folderKey = folder ? toFolderKey(folder.id) : null;
+    /* 소속 폴더 전체 + 글로벌 전체 제거 후 개별 토글 */
+    next = next.filter(x => x !== '전체' && x !== folderKey);
+    const idx = next.indexOf(val);
+    idx > -1 ? next.splice(idx, 1) : next.unshift(val);
+  }
+
+  applySelection(next);
+}
+
+/* ═══════════════════════════════════════════════
+   검색
+═══════════════════════════════════════════════ */
+
+function clearSearch() {
+  stopEmojiCycle();
+  dom.searchInput.value = '';
+  state.searchResult    = null;
+  state.isLoading       = false;
+  _syncSearchBar();
+  _syncFilterRow();
+  _renderFolderList();
+}
+
+function runSearch() {
+  const query = dom.searchInput.value.trim();
+  if (!query) return;
+
+  state.isLoading        = true;
+  state.searchResult     = null;
+  dom.searchBtn.disabled = true;
+  _syncFilterRow();
+  _renderSkeleton();
+
+  /* Drive 연동 시 이 setTimeout을 API 호출로 교체 */
+  setTimeout(() => {
+    state.isLoading = false;
+    const matched   = FOLDERS
+      .map(f => ({ ...f, services: f.services.filter(s => s.label.includes(query)) }))
+      .filter(f => f.services.length > 0);
+    state.searchResult = matched.length > 0 ? matched : [];
+    _syncFilterRow();
+    _renderFolderList();
+  }, 1500);
+}
+
+/* ═══════════════════════════════════════════════
+   내부 sync 함수 (부분 DOM 업데이트)
+   applySelection 외부에서 직접 호출 금지.
+   예외: clearSearch, runSearch, init
+═══════════════════════════════════════════════ */
+
+function _syncSearchBar() {
+  const hasVal = dom.searchInput.value.trim().length > 0;
+  dom.searchBtn.disabled        = !hasVal;
+  dom.searchClear.style.display = hasVal ? 'flex' : 'none';
+}
+
+function _syncFilterRow() {
+  dom.filterRow.style.display =
+    state.isLoading || state.searchResult !== null ? 'none' : 'flex';
+}
+
+function _syncAllChip() {
+  dom.allChip.setAttribute('aria-pressed', String(state.selected.includes('전체')));
+}
+
+function _syncDriveCount() {
+  const n = countSelectedImages();
+  dom.driveCount.innerHTML = `선택한 조건 화면: <span>${n}건</span>`;
+}
+
+function _syncCTA() {
+  const labels = resolveSelectedLabels();
+  if (!labels.size) {
+    dom.ctaBtn.disabled    = true;
+    dom.ctaBtn.textContent = '서비스를 선택해 주세요';
+  } else {
+    dom.ctaBtn.disabled    = false;
+    dom.ctaBtn.textContent = `서비스 ${labels.size}개 선택`;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   내부 render 함수
+═══════════════════════════════════════════════ */
+
+function _renderSkeleton() {
+  const chipSkel = n => Array.from({ length: n }, (_, i) =>
+    `<div class="sk" style="width:${44 + (i % 3) * 14}px;height:28px;border-radius:100px;"></div>`
+  ).join('');
+
+  dom.folderList.innerHTML = [3, 5, 4].map(n => `
+    <div class="skeleton-card">
+      <div class="skeleton-row">
+        <div class="sk sk-circle" style="width:20px;height:20px;"></div>
+        <div class="sk" style="width:${70 + n * 8}px;height:14px;"></div>
+        <div class="sk" style="width:24px;height:14px;margin-left:4px;"></div>
+      </div>
+      <div class="skeleton-chips">${chipSkel(n)}</div>
+    </div>`
+  ).join('');
+}
+
+function _renderSelBar() {
+  /* 초기화 버튼 항상 정리 후 재생성 */
+  dom.selBar.querySelector('.sel-reset')?.remove();
+  dom.selScroll.innerHTML = '';
+
+  if (!state.selected.length) {
+    dom.selBar.style.display = 'none';
+    return;
+  }
+
+  /* 태그 HTML */
+  dom.selScroll.innerHTML = state.selected.map(val => {
+    if (val === '전체')
+      return `<button class="sel-tag is-text-only" data-val="전체">전체 <span aria-hidden="true">✕</span></button>`;
+    if (isFolderKey(val)) {
+      const f = FOLDERS.find(f => f.id === folderIdFromKey(val));
+      return `<button class="sel-tag is-text-only" data-val="${val}">${f?.emoji ?? ''} 전체 <span aria-hidden="true">✕</span></button>`;
+    }
+    const svc = SERVICE_MAP.get(val);
+    return `<button class="sel-tag" data-val="${val}">${svc ? logoHTML(svc) : ''}${val} <span aria-hidden="true">✕</span></button>`;
+  }).join('');
+
+  /* 초기화 버튼: sel-scroll 왼쪽 고정 */
+  const resetBtn = document.createElement('button');
+  resetBtn.className   = 'sel-reset';
+  resetBtn.textContent = '초기화';
+  resetBtn.addEventListener('click', () => applySelection([]));
+  dom.selBar.insertBefore(resetBtn, dom.selScroll);
+
+  /* 태그 ✕: 해당 val 제거 */
+  dom.selScroll.querySelectorAll('.sel-tag[data-val]').forEach(tag => {
+    tag.addEventListener('click', () => {
+      applySelection(state.selected.filter(x => x !== tag.dataset.val));
+    });
+  });
+
+  dom.selBar.style.display = 'flex';
+}
+
+function _renderFolderList() {
+  stopEmojiCycle();
+
+  /* 빈 화면 */
+  if (state.searchResult !== null && !state.searchResult.length) {
+    const q = dom.searchInput.value;
+    dom.folderList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-emoji is-shaking" id="empty-emoji">🔍</div>
+        <div class="empty-title">'${q}'은(는) 등록되지 않았어요</div>
+        <div class="empty-sub">
+          현재 ${TOTAL_SERVICES}개 서비스, ${TOTAL_SCREENS}개 화면이 등록되어 있어요.<br>
+          목록에서 직접 골라보세요.
+        </div>
+        <button class="empty-action" id="empty-browse">직접 고르기</button>
+      </div>`;
+    document.getElementById('empty-browse').addEventListener('click', clearSearch);
+    startEmojiCycle();
+    return;
+  }
+
+  /* 폴더 목록 */
+  const folders = state.searchResult ?? FOLDERS;
+
+  dom.folderList.innerHTML = folders.map(folder => {
+    const isOpen        = state.openFolders.has(folder.id) || state.searchResult !== null;
+    const folderKey     = toFolderKey(folder.id);
+    const isFolderOn    = state.selected.includes(folderKey);
+    const selectedCount = isFolderOn
+      ? folder.services.length
+      : folder.services.filter(s => state.selected.includes(s.label)).length;
+
+    const chipsHTML = isOpen ? `
+      <div class="folder-chips">
+        <button class="chip is-text-only" aria-pressed="${isFolderOn}" data-val="${folderKey}">전체</button>
+        ${folder.services.map(svc => {
+          const isOn = isFolderOn || state.selected.includes(svc.label);
+          return `<button class="chip" aria-pressed="${isOn}" data-val="${svc.label}">${logoHTML(svc)}${svc.label}</button>`;
+        }).join('')}
+      </div>` : '';
+
+    return `
+      <div class="folder" role="listitem">
+        <div class="folder-header" data-folder-id="${folder.id}">
+          <div class="folder-header-left">
+            <span class="folder-arrow ${isOpen ? 'is-open' : ''}" aria-hidden="true">▶</span>
+            <span class="folder-emoji" aria-hidden="true">${folder.emoji}</span>
+            <span class="folder-name">${folder.name}</span>
+            <span class="folder-count">(${folder.services.length})</span>
+          </div>
+          ${selectedCount > 0 ? `<span class="folder-badge">${selectedCount}</span>` : ''}
+        </div>
+        ${chipsHTML}
+      </div>`;
+  }).join('');
+
+  /* 이벤트: 폴더 헤더 펼치기/접기 */
+  dom.folderList.querySelectorAll('.folder-header[data-folder-id]').forEach(header => {
+    header.addEventListener('click', () => {
+      const id = header.dataset.folderId;
+      state.openFolders.has(id)
+        ? state.openFolders.delete(id)
+        : state.openFolders.add(id);
+      _renderFolderList();
+    });
+  });
+
+  /* 이벤트: 칩 (폴더 헤더와 버블링 분리) */
+  dom.folderList.querySelectorAll('.chip[data-val]').forEach(chip => {
+    chip.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleSelection(chip.dataset.val);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   이벤트 바인딩
+═══════════════════════════════════════════════ */
+
+dom.allChip.addEventListener('click', () => {
+  applySelection(state.selected.includes('전체') ? [] : ['전체']);
+});
+
+dom.searchInput.addEventListener('input', _syncSearchBar);
+dom.searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !dom.searchBtn.disabled) runSearch();
+});
+dom.searchBtn.addEventListener('click', runSearch);
+dom.searchClear.addEventListener('click', clearSearch);
+
+/* ═══════════════════════════════════════════════
+   초기화
+═══════════════════════════════════════════════ */
+
+(function init() {
+  dom.allCount.textContent = TOTAL_SCREENS;
+  _syncDriveCount();
+  _renderFolderList();
+})();
+</script>
+</body>
+</html>
