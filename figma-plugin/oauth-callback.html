@@ -62,7 +62,6 @@
     // ── 설정 ──────────────────────────────────────────
     const CLIENT_ID = '806440627018-gouqkv9h88mnbnierq5rd2q2vhn64q31.apps.googleusercontent.com';
     const REDIRECT_URI = 'https://go-eun.github.io/design-research-oauth/oauth-callback.html';
-const CLIENT_SECRET = params.get('cs') || '';
     const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
     // ── DOM ───────────────────────────────────────────
@@ -86,6 +85,7 @@ const CLIENT_SECRET = params.get('cs') || '';
 
     // ── URL에서 code + state 추출 ─────────────────────
     const params = new URLSearchParams(window.location.search);
+    const CLIENT_SECRET = params.get('cs') || '';
     const code = params.get('code');
     const error = params.get('error');
 
