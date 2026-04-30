@@ -97,13 +97,13 @@
       setErr(error || 'code not found');
     } else {
       // ── PKCE: code_verifier 복원 ─────────────────────
-      const codeVerifier = sessionStorage.getItem('pkce_code_verifier');
+      const codeVerifier = decodeURIComponent(params.get('state') || '');
 
       if (!codeVerifier) {
         icon.textContent = '❌';
         title.textContent = '세션 오류';
         desc.textContent = '보안 세션이 만료됐어요. 플러그인에서 다시 로그인해주세요.';
-        setErr('code_verifier not found in sessionStorage');
+        setErr('code_verifier not found in state');
       } else {
         // ── Google과 토큰 교환 ───────────────────────────
         setLoading('토큰 교환 중...');
@@ -147,7 +147,7 @@
             };
 
             // ── sessionStorage 정리 ───────────────────────
-            sessionStorage.removeItem('pkce_code_verifier');
+            // state로 전달했으므로 별도 정리 불필요
           });
         })
         .catch(err => {

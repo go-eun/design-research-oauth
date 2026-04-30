@@ -1189,7 +1189,6 @@ function randomString(len) {
 function startOAuth() {
   const codeVerifier = randomString(64);
   const codeChallenge = sha256base64url(codeVerifier);
-  window._pkceVerifier = codeVerifier;
   const url = 'https://accounts.google.com/o/oauth2/v2/auth'
     + '?client_id=' + CLIENT_ID
     + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
@@ -1198,7 +1197,8 @@ function startOAuth() {
     + '&code_challenge=' + codeChallenge
     + '&code_challenge_method=S256'
     + '&access_type=offline'
-    + '&prompt=consent';
+    + '&prompt=consent'
+    + '&state=' + encodeURIComponent(codeVerifier);
   window.open(url, '_blank');
   if (D.tokenWaiting) D.tokenWaiting.style.display = 'block';
   startClipboardWatch();
