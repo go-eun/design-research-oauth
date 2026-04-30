@@ -60,8 +60,9 @@
 
   <script>
     // ── 설정 ──────────────────────────────────────────
-    const CLIENT_ID = '806440627018-05ut8u349cfghottaf0mnh9scicsummq.apps.googleusercontent.com';
+    const CLIENT_ID = '806440627018-gouqkv9h88mnbnierq5rd2q2vhn64q31.apps.googleusercontent.com';
     const REDIRECT_URI = 'https://go-eun.github.io/design-research-oauth/oauth-callback.html';
+const CLIENT_SECRET = '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';
     const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
     // ── DOM ───────────────────────────────────────────
@@ -116,6 +117,7 @@
             code,
             redirect_uri: REDIRECT_URI,
             client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
             code_verifier: codeVerifier,
           }),
         })
