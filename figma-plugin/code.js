@@ -3,7 +3,8 @@ figma.showUI(__html__, { width: 300, height: 500 });
 // 시작 시 저장된 토큰 불러와서 UI로 전달
 (async () => {
   const token = await figma.clientStorage.getAsync('drive_token');
-  figma.ui.postMessage({ type: 'init', payload: { token: token || null } });
+  const refreshToken = await figma.clientStorage.getAsync('drive_refresh_token');
+  figma.ui.postMessage({ type: 'init', payload: { token: token || null, refreshToken: refreshToken || null } });
 })();
 
 figma.ui.onmessage = async function(msg) {
@@ -12,14 +13,17 @@ figma.ui.onmessage = async function(msg) {
   // 토큰 저장
   if (msg.type === 'save-token') {
     const token = msg.payload && msg.payload.token;
+    const refreshToken = msg.payload && msg.payload.refreshToken;
     if (token) await figma.clientStorage.setAsync('drive_token', token);
+    if (refreshToken) await figma.clientStorage.setAsync('drive_refresh_token', refreshToken);
     return;
   }
 
-  // 토큰 삭제 (만료 시 ui.js에서 요청)
+  // 토큰 삭제 (만료 시 요청)
   if (msg.type === 'clear-token') {
     await figma.clientStorage.deleteAsync('drive_token');
-    figma.ui.postMessage({ type: 'init', payload: { token: null } });
+    await figma.clientStorage.deleteAsync('drive_refresh_token');
+    figma.ui.postMessage({ type: 'init', payload: { token: null, refreshToken: null } });
     return;
   }
 
