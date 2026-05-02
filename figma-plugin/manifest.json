@@ -1,6 +1,6 @@
 {
   "name": "디자인 리서치",
-  "id": "design-research-plugin",
+  "id": "design-research-plugin-v2",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",

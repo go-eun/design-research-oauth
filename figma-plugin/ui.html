@@ -1203,7 +1203,6 @@ function startOAuth() {
     + '&prompt=consent'
     + '&state=' + encodeURIComponent(stateValue);
     // &cs= 제거 — Google이 redirect_uri 추가 파라미터를 제거하므로 state에 담음
-  console.log('DEBUG OAuth URL:', url);
   window.open(url, '_blank');
   if (D.tokenWaiting) D.tokenWaiting.style.display = 'block';
   startClipboardWatch();
