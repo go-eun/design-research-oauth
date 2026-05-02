@@ -38,9 +38,7 @@ figma.ui.onmessage = async function(msg) {
   if (msg.type === 'add-images') {
     try {
     const images = msg.payload && msg.payload.images;
-    console.log('[add-images] received:', images && images.length, 'images');
     if (images && images[0]) {
-      console.log('[add-images] first image:', {
         id: images[0].id,
         svc: images[0].svc,
         pat: images[0].pat,

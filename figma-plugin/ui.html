@@ -1108,12 +1108,10 @@ const _blobCache = new Map(); // fileId → objectURL
 
 async function fetchBlobUrl(fileId) {
   if (_blobCache.has(fileId)) return _blobCache.get(fileId);
-  console.log('[blob] fetching:', fileId);
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
     { headers: { Authorization: `Bearer ${_driveToken}` } }
   );
-  console.log('[blob] status:', res.status, fileId);
   if (res.status === 401) {
     parent.postMessage({ pluginMessage: { type: 'clear-token' } }, '*');
     showTokenScreen();
@@ -1371,7 +1369,6 @@ function metadataToImage(m, uid, pngMap) {
     })(),
     _fileId: (() => {
       const fileId = m.file && pngMap ? pngMap.get(m.file) || null : null;
-      console.log('[meta] file:', m.file, '→ fileId:', fileId);
       return fileId;
     })(),
     month,
@@ -1389,9 +1386,6 @@ async function loadDriveData() {
       fetchAllMetadata(),
       fetchPngFileMap(DRIVE_ROOT),
     ]);
-    console.log('[drive] metadata count:', metadata.length);
-    console.log('[drive] pngMap size:', pngMap.size);
-    console.log('[drive] pngMap sample:', [...pngMap.entries()].slice(0, 3));
     const imgs = metadata.map((m, i) => metadataToImage(m, i, pngMap));
     MASTER_IMGS.length = 0;
     MASTER_IMGS.push(...imgs);
