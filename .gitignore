@@ -1,0 +1,10 @@
+**/.DS_Store
+*.bak
+*.bak*
+*.pre*
+.idea/
+screenshot-helper/.idea/
+screenshot-helper/__pycache__/
+screenshot-helper/credentials.json
+screenshot-helper/token.json
+design-research-plugin-desktop.rtf

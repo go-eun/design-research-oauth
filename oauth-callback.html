@@ -85,8 +85,7 @@
 
     // ── URL에서 code + state 추출 ─────────────────────
     const params = new URLSearchParams(window.location.search);
-    const stateRaw = decodeURIComponent(params.get('state') || '');
-    const [codeVerifier, CLIENT_SECRET] = stateRaw.split('|');
+    const codeVerifier = decodeURIComponent(params.get('state') || '');
     const code = params.get('code');
     const error = params.get('error');
 
@@ -118,7 +117,7 @@
             code,
             redirect_uri: REDIRECT_URI,
             client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
+            client_secret: '여기에_실제_SECRET_값_붙여넣기',
             code_verifier: codeVerifier,
           }),
         })
