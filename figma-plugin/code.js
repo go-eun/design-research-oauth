@@ -38,13 +38,6 @@ figma.ui.onmessage = async function(msg) {
   if (msg.type === 'add-images') {
     try {
     const images = msg.payload && msg.payload.images;
-    if (images && images[0]) {
-        id: images[0].id,
-        svc: images[0].svc,
-        pat: images[0].pat,
-        bytesLength: images[0].bytes && images[0].bytes.length,
-      });
-    }
     if (!images || !images.length) {
       figma.ui.postMessage({ type: 'add-done', payload: { count: 0 } });
       return;
