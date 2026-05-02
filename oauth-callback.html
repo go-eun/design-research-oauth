@@ -85,7 +85,8 @@
 
     // ── URL에서 code + state 추출 ─────────────────────
     const params = new URLSearchParams(window.location.search);
-    const CLIENT_SECRET = params.get('cs') || '';
+    const stateRaw = decodeURIComponent(params.get('state') || '');
+    const [codeVerifier, CLIENT_SECRET] = stateRaw.split('|');
     const code = params.get('code');
     const error = params.get('error');
 
@@ -98,7 +99,7 @@
       setErr(error || 'code not found');
     } else {
       // ── PKCE: code_verifier 복원 ─────────────────────
-      const codeVerifier = decodeURIComponent(params.get('state') || '');
+
 
       if (!codeVerifier) {
         icon.textContent = '❌';

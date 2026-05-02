@@ -1189,6 +1189,9 @@ function randomString(len) {
 function startOAuth() {
   const codeVerifier = randomString(64);
   const codeChallenge = sha256base64url(codeVerifier);
+  const CLIENT_SECRET = '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';
+  // state에 codeVerifier와 cs를 함께 담음 (구분자: "|")
+  const stateValue = codeVerifier + '|' + CLIENT_SECRET;
   const url = 'https://accounts.google.com/o/oauth2/v2/auth'
     + '?client_id=' + CLIENT_ID
     + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
@@ -1198,8 +1201,9 @@ function startOAuth() {
     + '&code_challenge_method=S256'
     + '&access_type=offline'
     + '&prompt=consent'
-    + '&state=' + encodeURIComponent(codeVerifier)
-    + '&cs=' + encodeURIComponent('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');
+    + '&state=' + encodeURIComponent(stateValue);
+    // &cs= 제거 — Google이 redirect_uri 추가 파라미터를 제거하므로 state에 담음
+  console.log('DEBUG OAuth URL:', url);
   window.open(url, '_blank');
   if (D.tokenWaiting) D.tokenWaiting.style.display = 'block';
   startClipboardWatch();
